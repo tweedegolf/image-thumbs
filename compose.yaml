@@ -1,0 +1,10 @@
+services:
+  # FIXME until the fix of #1344 is released for the fake GCS, we have to run the main branch locally
+  # FIXME using fork of fsouza/fake-gcs-server - switch back to upstream as soon as fsouza/fake-gcs-server#1164 is merged and released
+  gcs-mock:
+    image: tustvold/fake-gcs-server
+    volumes:
+      - "./mock_data:/data"
+    ports:
+      - 4443:4443
+    command: "-backend memory -scheme http -data /data -log-level debug -public-host localhost:4443"

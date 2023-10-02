@@ -1,0 +1,20 @@
+[package]
+name = "image_thumbs"
+version = "0.1.0"
+edition = "2021"
+
+[[example]]
+name = "basic"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+object_store = { version = "0.7" , features = ["gcp"]}
+image = { version = "0.24.7", default-features = false, features = ["png", "jpeg"] }
+config = {version = "0.13", default-features = false, features = ["yaml"]}
+thiserror = "1.0"
+serde = {version = "1.0", features = ["derive"] }
+tokio = { version = "1.32", features = ["full"] }
+bytes = "1.5"
+futures = "0.3.28"
+mime = "0.3"
