@@ -114,3 +114,246 @@ impl<T: ObjectStore> ImageThumbs<T> {
             .await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use image::ImageFormat;
+    use object_store::ObjectStore;
+    use tokio::fs::File;
+    use tokio::io::{AsyncReadExt, BufReader};
+
+    use crate::ImageThumbs;
+
+    #[tokio::test]
+    async fn from_cloud() {
+        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
+        create_thumbs(&client).await;
+        create_thumbs_dest(&client).await;
+        create_thumbs_dir(&client).await;
+        create_thumbs_from_bytes(&client).await;
+    }
+
+    async fn create_thumbs<T: ObjectStore>(client: &ImageThumbs<T>) {
+        // create thumbnails
+        client.create_thumbs(Path::new("test.jpg")).await.unwrap();
+        client
+            .create_thumbs(Path::new("penguin.png"))
+            .await
+            .unwrap();
+
+        // check if they exist
+        client
+            .download_image(Path::new("test_standard.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("test_mini.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("penguin_standard.png"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("penguin_mini.png"))
+            .await
+            .unwrap();
+
+        // delete them to not influence following test
+        client.delete(Path::new("test_standard.jpg")).await.unwrap();
+        client.delete(Path::new("test_mini.jpg")).await.unwrap();
+        client
+            .delete(Path::new("penguin_standard.png"))
+            .await
+            .unwrap();
+        client.delete(Path::new("penguin_mini.png")).await.unwrap();
+    }
+
+    async fn create_thumbs_dest<T: ObjectStore>(client: &ImageThumbs<T>) {
+        client
+            .create_thumbs_dest(Path::new("test.jpg"), Path::new("/test_dir"))
+            .await
+            .unwrap();
+        client
+            .create_thumbs_dest(Path::new("penguin.png"), Path::new("/test_dir"))
+            .await
+            .unwrap();
+
+        // check if they exist
+        client
+            .download_image(Path::new("test_dir/test_standard.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("test_dir/test_mini.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("test_dir/penguin_standard.png"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("test_dir/penguin_mini.png"))
+            .await
+            .unwrap();
+
+        // delete them to not influence following test
+        client
+            .delete(Path::new("test_dir/test_standard.jpg"))
+            .await
+            .unwrap();
+        client
+            .delete(Path::new("test_dir/test_mini.jpg"))
+            .await
+            .unwrap();
+        client
+            .delete(Path::new("test_dir/penguin_standard.png"))
+            .await
+            .unwrap();
+        client
+            .delete(Path::new("test_dir/penguin_mini.png"))
+            .await
+            .unwrap();
+    }
+
+    async fn create_thumbs_dir<T: ObjectStore>(client: &ImageThumbs<T>) {
+        client.create_thumbs_dir(None).await.unwrap();
+
+        // check if they exist
+        client
+            .download_image(Path::new("test_standard.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("test_mini.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("penguin_standard.png"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("penguin_mini.png"))
+            .await
+            .unwrap();
+
+        // delete them to not influence following test
+        client.delete(Path::new("test_standard.jpg")).await.unwrap();
+        client.delete(Path::new("test_mini.jpg")).await.unwrap();
+        client
+            .delete(Path::new("penguin_standard.png"))
+            .await
+            .unwrap();
+        client.delete(Path::new("penguin_mini.png")).await.unwrap();
+
+        client
+            .create_thumbs_dir(Some(Path::new("/")))
+            .await
+            .unwrap();
+
+        // check if they exist
+        client
+            .download_image(Path::new("test_standard.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("test_mini.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("penguin_standard.png"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("penguin_mini.png"))
+            .await
+            .unwrap();
+
+        // delete them to not influence following test
+        client.delete(Path::new("test_standard.jpg")).await.unwrap();
+        client.delete(Path::new("test_mini.jpg")).await.unwrap();
+        client
+            .delete(Path::new("penguin_standard.png"))
+            .await
+            .unwrap();
+        client.delete(Path::new("penguin_mini.png")).await.unwrap();
+    }
+
+    async fn create_thumbs_from_bytes<T: ObjectStore>(client: &ImageThumbs<T>) {
+        // create JPG image thumbs
+        {
+            let test_jpg = File::open("src/test/test.jpg").await.unwrap();
+            let mut reader = BufReader::new(test_jpg);
+            let mut buffer = Vec::new();
+
+            reader.read_to_end(&mut buffer).await.unwrap();
+
+            client
+                .create_thumbs_dest_from_bytes(
+                    buffer,
+                    Path::new("/from_bytes_test"),
+                    "test",
+                    ImageFormat::Jpeg,
+                )
+                .await
+                .unwrap();
+        }
+
+        // create PNG image thumbs
+        {
+            let test_jpg = File::open("src/test/penguin.png").await.unwrap();
+            let mut reader = BufReader::new(test_jpg);
+            let mut buffer = Vec::new();
+
+            reader.read_to_end(&mut buffer).await.unwrap();
+
+            client
+                .create_thumbs_dest_from_bytes(
+                    buffer,
+                    Path::new("/from_bytes_test"),
+                    "penguin",
+                    ImageFormat::Png,
+                )
+                .await
+                .unwrap();
+        }
+
+        // check if they exist
+        client
+            .download_image(Path::new("from_bytes_test/test_standard.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("from_bytes_test/test_mini.jpg"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("from_bytes_test/penguin_standard.png"))
+            .await
+            .unwrap();
+        client
+            .download_image(Path::new("from_bytes_test/penguin_mini.png"))
+            .await
+            .unwrap();
+
+        // delete them to not influence following test
+        client
+            .delete(Path::new("from_bytes_test/test_standard.jpg"))
+            .await
+            .unwrap();
+        client
+            .delete(Path::new("from_bytes_test/test_mini.jpg"))
+            .await
+            .unwrap();
+        client
+            .delete(Path::new("from_bytes_test/penguin_standard.png"))
+            .await
+            .unwrap();
+        client
+            .delete(Path::new("from_bytes_test/penguin_mini.png"))
+            .await
+            .unwrap();
+    }
+}

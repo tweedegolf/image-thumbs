@@ -53,4 +53,12 @@ impl<T: ObjectStore> ImageThumbs<T> {
             bytes,
         })
     }
+
+    #[cfg(test)]
+    pub(crate) async fn delete(&self, path: &std::path::Path) -> ThumbsResult<()> {
+        self.client
+            .delete(&Path::parse(path.to_str().ok_or(Error::Utf)?)?)
+            .await?;
+        Ok(())
+    }
 }

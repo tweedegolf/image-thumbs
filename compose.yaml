@@ -7,4 +7,15 @@ services:
       - "./mock_data:/data"
     ports:
       - 4443:4443
-    command: "-backend memory -scheme http -data /data -log-level debug -public-host localhost:4443"
+    command: "-backend memory -scheme http -data /data -log-level debug -public-host gcs-mock:4443"
+
+  rust-check:
+    image: docker.tgrep.nl/docker/rust-dev:stable
+    user: '$USER_ID:$GROUP_ID'
+    working_dir: /app
+    environment:
+      GOOGLE_BUCKET: testBucket
+      GOOGLE_SERVICE_ACCOUNT: src/test/gcs_mock.json
+    volumes:
+      - '.:/app'
+    entrypoint: ./bin/check.sh

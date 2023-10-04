@@ -1,0 +1,10 @@
+thumbs:
+  - name: standard
+    quality: 80
+    size: [640, 480]
+    mode: fit
+
+  - name: mini
+    quality: 80
+    size: [40, 40]
+    mode: crop
