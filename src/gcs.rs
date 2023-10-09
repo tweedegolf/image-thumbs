@@ -23,7 +23,7 @@ impl ImageThumbs<GoogleCloudStorage> {
         let mut client_options = ClientOptions::new()
             .with_content_type_for_suffix("jpg", mime::IMAGE_JPEG.to_string())
             .with_content_type_for_suffix("jpeg", mime::IMAGE_JPEG.to_string())
-            .with_content_type_for_suffix("png", mime::TEXT_PLAIN.to_string());
+            .with_content_type_for_suffix("png", mime::IMAGE_PNG.to_string());
 
         #[cfg(test)]
         {
