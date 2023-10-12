@@ -1,10 +1,8 @@
 use ::image::{ImageError, ImageFormat};
-use futures::TryStreamExt;
 use object_store::path::Path;
-use object_store::{DynObjectStore, ObjectStore};
+use object_store::ObjectStore;
 use serde::Deserialize;
 use thiserror::Error;
-use tokio::sync::mpsc;
 
 mod gcs;
 mod image;
@@ -56,18 +54,6 @@ struct ImageDetails {
     bytes: Vec<u8>,
 }
 
-async fn flatten_list_stream(
-    storage: &DynObjectStore,
-    prefix: Option<&Path>,
-) -> ThumbsResult<Vec<Path>> {
-    Ok(storage
-        .list(prefix)
-        .await?
-        .map_ok(|meta| meta.location)
-        .try_collect::<Vec<Path>>()
-        .await?)
-}
-
 impl<T: ObjectStore> ImageThumbs<T> {
     /// Get image from object storage, create thumbnails, and put them back in the same location
     pub async fn create_thumbs(&self, file: &str) -> ThumbsResult<()> {
@@ -90,7 +76,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
             }
             None => None,
         };
-        let names = flatten_list_stream(&self.client, os_path).await?;
+        let names = self.list_folder(os_path).await?;
 
         for name in names {
             self.create_thumbs(name.as_ref()).await?;
@@ -111,13 +97,10 @@ impl<T: ObjectStore> ImageThumbs<T> {
         image_name: &str,
         format: ImageFormat,
     ) -> ThumbsResult<()> {
-        let (sender, receiver) = mpsc::channel(2);
+        let dest_dir = Path::parse(dest_dir)?;
 
-        let path = Path::parse(dest_dir)?;
-
-        self.create_thumbs_from_bytes(bytes, format, sender)?;
-        self.upload_thumbs(receiver, &path, image_name.to_string())
-            .await
+        let thumbs = self.create_thumbs_from_bytes(bytes, dest_dir, image_name, format)?;
+        self.upload_thumbs(thumbs).await
     }
 }
 

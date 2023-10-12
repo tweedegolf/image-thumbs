@@ -1,32 +1,26 @@
 use std::ops::Add;
 
+use futures::TryStreamExt;
 use image::ImageFormat;
 use object_store::path::{Path, PathPart};
 use object_store::ObjectStore;
-use tokio::sync::mpsc;
 
 use crate::{ImageDetails, ImageThumbs, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {
-    pub(crate) async fn upload_thumbs(
-        &self,
-        mut image_channel: mpsc::Receiver<(Vec<u8>, String, ImageFormat)>,
-        path: &Path,
-        name: String,
-    ) -> ThumbsResult<()> {
-        while let Some((bytes, thumb_name, image_format)) = image_channel.recv().await {
-            let path = format!(
-                "{}/{}_{}.{}",
-                path,
-                name,
-                thumb_name,
-                image_format.extensions_str()[0]
-            );
-
-            self.client.put(&Path::parse(path)?, bytes.into()).await?;
+    pub(crate) async fn upload_thumbs(&self, images: Vec<ImageDetails>) -> ThumbsResult<()> {
+        for image in images {
+            let path = Self::generate_path(&image.path, &image.stem, &image.format);
+            self.client
+                .put(&Path::parse(path)?, image.bytes.into())
+                .await?;
         }
 
         Ok(())
+    }
+
+    pub(crate) fn generate_path(base: &Path, name: &str, format: &ImageFormat) -> String {
+        format!("{}/{}.{}", base, name, format.extensions_str()[0])
     }
 
     pub(crate) async fn download_image(&self, path: &str) -> ThumbsResult<ImageDetails> {
@@ -60,6 +54,16 @@ impl<T: ObjectStore> ImageThumbs<T> {
             path,
             bytes,
         })
+    }
+
+    pub(crate) async fn list_folder(&self, prefix: Option<&Path>) -> ThumbsResult<Vec<Path>> {
+        Ok(self
+            .client
+            .list(prefix)
+            .await?
+            .map_ok(|meta| meta.location)
+            .try_collect::<Vec<Path>>()
+            .await?)
     }
 
     #[cfg(test)]
