@@ -11,17 +11,30 @@ use object_store::ObjectStore;
 use crate::{Error, ImageDetails, ImageThumbs, Mode, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {
-    pub(crate) fn create_thumbs_from_bytes(
+    pub(crate) async fn create_thumbs_from_bytes(
         &self,
         bytes: Vec<u8>,
         dest_dir: Path,
         stem: &str,
         format: ImageFormat,
+        force_override: bool,
     ) -> ThumbsResult<Vec<ImageDetails>> {
         let image = load_from_memory_with_format(&bytes, format)?;
 
         let mut res = Vec::with_capacity(self.settings.len());
         for params in self.settings.iter() {
+            let new_name = format!("{stem}_{}", params.name);
+            if !force_override
+                && self
+                    .head(&Path::parse(Self::generate_path(
+                        &dest_dir, &new_name, &format,
+                    ))?)
+                    .await
+                    .is_ok()
+            {
+                continue; // do not compute already existent thumbnails
+            }
+
             let mut buf = Vec::new();
             let writer = Cursor::new(&mut buf);
 
@@ -50,7 +63,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
                 _ => Err(Error::NotSupported)?,
             };
             res.push(ImageDetails {
-                stem: format!("{stem}_{}", params.name),
+                stem: new_name,
                 format,
                 path: dest_dir.clone(),
                 bytes: buf,

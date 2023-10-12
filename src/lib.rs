@@ -47,6 +47,7 @@ enum Mode {
     Crop,
 }
 
+#[derive(Debug)]
 struct ImageDetails {
     stem: String,
     format: ImageFormat,
@@ -55,39 +56,44 @@ struct ImageDetails {
 }
 
 impl<T: ObjectStore> ImageThumbs<T> {
-    /// Get image from object storage, create thumbnails, and put them back in the same location
-    pub async fn create_thumbs(&self, file: &str) -> ThumbsResult<()> {
-        let image = self.download_image(file).await?;
-        self.create_thumbs_dest_from_bytes(
-            image.bytes,
-            image.path.as_ref(),
-            &image.stem,
-            image.format,
-        )
-        .await
-    }
-
-    pub async fn create_thumbs_dir(&self, path: Option<&str>) -> ThumbsResult<()> {
-        let os_p;
-        let os_path = match path {
-            Some(p) => {
-                os_p = Path::from_filesystem_path(p)?;
-                Some(&os_p)
-            }
+    /// Get image from object storage, create thumbnails, and put them in the `dest_dir` directory
+    pub async fn create_thumbs_dir(
+        &self,
+        directory: Option<&str>,
+        dest_dir: &str,
+        force_override: bool,
+    ) -> ThumbsResult<()> {
+        let prefix = match directory {
+            Some(p) => Some(Path::parse(p)?),
             None => None,
         };
-        let names = self.list_folder(os_path).await?;
 
-        for name in names {
-            self.create_thumbs(name.as_ref()).await?;
+        let names = self.list_folder(prefix.as_ref()).await?;
+        let existent_thumbs = self.list_folder(Some(&Path::parse(dest_dir)?)).await?;
+        let images_to_thumbnail = self.filter_existent_thumbs(names, &existent_thumbs)?;
+
+        for name in images_to_thumbnail {
+            self.create_thumbs(name.as_ref(), dest_dir, force_override)
+                .await?;
         }
         Ok(())
     }
 
-    pub async fn create_thumbs_dest(&self, file: &str, dest_dir: &str) -> ThumbsResult<()> {
+    pub async fn create_thumbs(
+        &self,
+        file: &str,
+        dest_dir: &str,
+        force_override: bool,
+    ) -> ThumbsResult<()> {
         let image = self.download_image(file).await?;
-        self.create_thumbs_dest_from_bytes(image.bytes, dest_dir, &image.stem, image.format)
-            .await
+        self.create_thumbs_dest_from_bytes(
+            image.bytes,
+            dest_dir,
+            &image.stem,
+            image.format,
+            force_override,
+        )
+        .await
     }
 
     pub async fn create_thumbs_dest_from_bytes(
@@ -96,10 +102,13 @@ impl<T: ObjectStore> ImageThumbs<T> {
         dest_dir: &str,
         image_name: &str,
         format: ImageFormat,
+        force_override: bool,
     ) -> ThumbsResult<()> {
         let dest_dir = Path::parse(dest_dir)?;
 
-        let thumbs = self.create_thumbs_from_bytes(bytes, dest_dir, image_name, format)?;
+        let thumbs = self
+            .create_thumbs_from_bytes(bytes, dest_dir, image_name, format, force_override)
+            .await?;
         self.upload_thumbs(thumbs).await
     }
 }
@@ -107,46 +116,29 @@ impl<T: ObjectStore> ImageThumbs<T> {
 #[cfg(test)]
 mod tests {
     use image::ImageFormat;
+    use object_store::path::Path;
     use object_store::ObjectStore;
     use tokio::fs::File;
     use tokio::io::{AsyncReadExt, BufReader};
 
-    use crate::ImageThumbs;
+    use crate::{ImageDetails, ImageThumbs};
 
     #[tokio::test]
     async fn from_cloud() {
         let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
         create_thumbs(&client).await;
-        create_thumbs_dest(&client).await;
         create_thumbs_dir(&client).await;
         create_thumbs_from_bytes(&client).await;
+        override_behaviour(&client).await;
     }
 
     async fn create_thumbs<T: ObjectStore>(client: &ImageThumbs<T>) {
-        // create thumbnails
-        client.create_thumbs("penguin.jpg").await.unwrap();
-        client.create_thumbs("penguin.png").await.unwrap();
-
-        // check if they exist
-        client.download_image("penguin_standard.jpg").await.unwrap();
-        client.download_image("penguin_mini.jpg").await.unwrap();
-        client.download_image("penguin_standard.png").await.unwrap();
-        client.download_image("penguin_mini.png").await.unwrap();
-
-        // delete them to not influence following test
-        client.delete("penguin_standard.jpg").await.unwrap();
-        client.delete("penguin_mini.jpg").await.unwrap();
-        client.delete("penguin_standard.png").await.unwrap();
-        client.delete("penguin_mini.png").await.unwrap();
-    }
-
-    async fn create_thumbs_dest<T: ObjectStore>(client: &ImageThumbs<T>) {
         client
-            .create_thumbs_dest("penguin.jpg", "/test_dir")
+            .create_thumbs("penguin.jpg", "/test_dir", false)
             .await
             .unwrap();
         client
-            .create_thumbs_dest("penguin.png", "/test_dir")
+            .create_thumbs("penguin.png", "/test_dir", false)
             .await
             .unwrap();
 
@@ -182,33 +174,63 @@ mod tests {
     }
 
     async fn create_thumbs_dir<T: ObjectStore>(client: &ImageThumbs<T>) {
-        client.create_thumbs_dir(None).await.unwrap();
+        client
+            .create_thumbs_dir(None, "thumbs", false)
+            .await
+            .unwrap();
 
         // check if they exist
-        client.download_image("penguin_standard.jpg").await.unwrap();
-        client.download_image("penguin_mini.jpg").await.unwrap();
-        client.download_image("penguin_standard.png").await.unwrap();
-        client.download_image("penguin_mini.png").await.unwrap();
+        client
+            .download_image("thumbs/penguin_standard.jpg")
+            .await
+            .unwrap();
+        client
+            .download_image("thumbs/penguin_mini.jpg")
+            .await
+            .unwrap();
+        client
+            .download_image("thumbs/penguin_standard.png")
+            .await
+            .unwrap();
+        client
+            .download_image("thumbs/penguin_mini.png")
+            .await
+            .unwrap();
 
         // delete them to not influence following test
-        client.delete("penguin_standard.jpg").await.unwrap();
-        client.delete("penguin_mini.jpg").await.unwrap();
-        client.delete("penguin_standard.png").await.unwrap();
-        client.delete("penguin_mini.png").await.unwrap();
+        client.delete("thumbs/penguin_standard.jpg").await.unwrap();
+        client.delete("thumbs/penguin_mini.jpg").await.unwrap();
+        client.delete("thumbs/penguin_standard.png").await.unwrap();
+        client.delete("thumbs/penguin_mini.png").await.unwrap();
 
-        client.create_thumbs_dir(Some("/")).await.unwrap();
+        client
+            .create_thumbs_dir(Some("/"), "thumbs", false)
+            .await
+            .unwrap();
 
         // check if they exist
-        client.download_image("penguin_standard.jpg").await.unwrap();
-        client.download_image("penguin_mini.jpg").await.unwrap();
-        client.download_image("penguin_standard.png").await.unwrap();
-        client.download_image("penguin_mini.png").await.unwrap();
+        client
+            .download_image("thumbs/penguin_standard.jpg")
+            .await
+            .unwrap();
+        client
+            .download_image("thumbs/penguin_mini.jpg")
+            .await
+            .unwrap();
+        client
+            .download_image("thumbs/penguin_standard.png")
+            .await
+            .unwrap();
+        client
+            .download_image("thumbs/penguin_mini.png")
+            .await
+            .unwrap();
 
         // delete them to not influence following test
-        client.delete("penguin_standard.jpg").await.unwrap();
-        client.delete("penguin_mini.jpg").await.unwrap();
-        client.delete("penguin_standard.png").await.unwrap();
-        client.delete("penguin_mini.png").await.unwrap();
+        client.delete("thumbs/penguin_standard.jpg").await.unwrap();
+        client.delete("thumbs/penguin_mini.jpg").await.unwrap();
+        client.delete("thumbs/penguin_standard.png").await.unwrap();
+        client.delete("thumbs/penguin_mini.png").await.unwrap();
     }
 
     async fn create_thumbs_from_bytes<T: ObjectStore>(client: &ImageThumbs<T>) {
@@ -228,6 +250,7 @@ mod tests {
                     "/from_bytes_test",
                     "penguin",
                     ImageFormat::Jpeg,
+                    false,
                 )
                 .await
                 .unwrap();
@@ -249,6 +272,7 @@ mod tests {
                     "/from_bytes_test",
                     "penguin",
                     ImageFormat::Png,
+                    false,
                 )
                 .await
                 .unwrap();
@@ -289,5 +313,63 @@ mod tests {
             .delete("from_bytes_test/penguin_mini.png")
             .await
             .unwrap();
+    }
+
+    async fn override_behaviour<T: ObjectStore>(client: &ImageThumbs<T>) {
+        let broken_thumb = ImageDetails {
+            stem: "penguin_standard".to_string(),
+            format: ImageFormat::Png,
+            path: Path::parse("/thumbs").unwrap(),
+            bytes: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+        };
+        client.upload_thumbs(vec![broken_thumb]).await.unwrap();
+
+        client
+            .create_thumbs_dir(Some("/"), "thumbs", false)
+            .await
+            .unwrap();
+
+        client
+            .download_image("thumbs/penguin_standard.jpg")
+            .await
+            .unwrap();
+        client
+            .download_image("thumbs/penguin_mini.jpg")
+            .await
+            .unwrap();
+        assert_eq!(
+            client
+                .download_image("thumbs/penguin_standard.png")
+                .await
+                .unwrap()
+                .bytes,
+            vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+            "This image should not be overwritten"
+        );
+        client
+            .download_image("thumbs/penguin_mini.png")
+            .await
+            .unwrap();
+
+        client
+            .create_thumbs_dir(Some("/"), "thumbs", true)
+            .await
+            .unwrap();
+
+        assert_ne!(
+            client
+                .download_image("thumbs/penguin_standard.png")
+                .await
+                .unwrap()
+                .bytes,
+            vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+            "The image should have been overwritten"
+        );
+
+        // delete them to not influence following test
+        client.delete("thumbs/penguin_standard.jpg").await.unwrap();
+        client.delete("thumbs/penguin_mini.jpg").await.unwrap();
+        client.delete("thumbs/penguin_standard.png").await.unwrap();
+        client.delete("thumbs/penguin_mini.png").await.unwrap();
     }
 }
