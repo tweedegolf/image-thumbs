@@ -16,7 +16,18 @@ mod model;
 mod storage;
 
 impl<T: ObjectStore> ImageThumbs<T> {
-    /// Get image from object storage, create thumbnails, and put them in the `dest_dir` directory
+    /// Gets all images from one object storage level, creates thumbnails for each of them, and puts
+    /// them in the `dest_dir` directory.
+    ///
+    /// # Arguments
+    /// * `directory` - directory to create thumbnails for.
+    /// It will list all objects on this level and create thumbnails (if they do not already exist).
+    ///
+    /// * `dest_dir` - directory to store all created thumbnails.
+    /// This directory will be checked for already existent thumbnails, if `force_override` is false.
+    ///
+    /// * `force_override` - if `true` it will override already existent files with the same name.
+    /// If false, it will preserve already existent files.
     pub async fn create_thumbs_dir(
         &self,
         directory: Option<&str>,
@@ -39,6 +50,17 @@ impl<T: ObjectStore> ImageThumbs<T> {
         Ok(())
     }
 
+    /// Gets one image from the object storage, creates thumbnails for it, and puts them in the
+    /// `dest_dir` directory.
+    ///
+    /// # Arguments
+    /// * `file` - image to create thumbnails for.
+    ///
+    /// * `dest_dir` - directory to store all created thumbnails.
+    /// This directory will be checked for already existent thumbnails, if `force_override` is false.
+    ///
+    /// * `force_override` - if `true` it will override already existent files with the same name.
+    /// If false, it will preserve already existent files.
     pub async fn create_thumbs(
         &self,
         file: &str,
@@ -56,6 +78,23 @@ impl<T: ObjectStore> ImageThumbs<T> {
         .await
     }
 
+    /// Takes the raw bytes of an image, creates thumbnails for it, and puts them in the `dest_dir`
+    /// directory.
+    ///
+    /// # Arguments
+    /// * `bytes` - raw image bytes to create thumbnails for.
+    ///
+    /// * `dest_dir` - directory to store all created thumbnails.
+    /// This directory will be checked for already existent thumbnails, if `force_override` is false.
+    ///
+    /// * `image_name` - name used for the created thumbnails. Should not include the extension.
+    /// Final thumbnail names will be of the form `<image_name>_<thumbnail_name>.<extension>`
+    ///
+    /// * `format` - format of the input image. The output image will have the same type.
+    /// Currently supported are JPG and PNG.
+    ///
+    /// * `force_override` - if `true` it will override already existent files with the same name.
+    /// If false, it will preserve already existent files.
     pub async fn create_thumbs_dest_from_bytes(
         &self,
         bytes: Vec<u8>,
@@ -72,6 +111,15 @@ impl<T: ObjectStore> ImageThumbs<T> {
         self.upload_thumbs(thumbs).await
     }
 
+    /// Extracts the settings from the given configuration file.
+    ///
+    /// The config file must look like the example in `examples/image_thumbs.yaml`:
+    /// ```yaml
+    #[doc = include_str!("../examples/image_thumbs.yaml")]
+    /// ```
+    ///
+    /// # Arguments
+    /// * `config` - Path to the config file from the crate root (`.yaml` may be omitted)
     fn settings(config: &str) -> ThumbsResult<Vec<Params>> {
         Ok(Config::builder()
             .add_source(config::File::with_name(config))
@@ -82,24 +130,19 @@ impl<T: ObjectStore> ImageThumbs<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::ImageDetails;
-    use crate::ImageThumbs;
     use image::ImageFormat;
     use object_store::path::Path;
-    use object_store::ObjectStore;
+    use sequential_test::sequential;
     use tokio::fs::File;
     use tokio::io::{AsyncReadExt, BufReader};
 
-    #[tokio::test]
-    async fn from_cloud() {
-        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
-        create_thumbs(&client).await;
-        create_thumbs_dir(&client).await;
-        create_thumbs_from_bytes(&client).await;
-        override_behaviour(&client).await;
-    }
+    use crate::model::ImageDetails;
+    use crate::ImageThumbs;
 
-    async fn create_thumbs<T: ObjectStore>(client: &ImageThumbs<T>) {
+    #[tokio::test]
+    #[sequential]
+    async fn create_thumbs() {
+        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
         client
             .create_thumbs("penguin.jpg", "/test_dir", false)
             .await
@@ -140,7 +183,10 @@ mod tests {
         client.delete("test_dir/penguin_mini.png").await.unwrap();
     }
 
-    async fn create_thumbs_dir<T: ObjectStore>(client: &ImageThumbs<T>) {
+    #[tokio::test]
+    #[sequential]
+    async fn create_thumbs_dir() {
+        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
         client
             .create_thumbs_dir(None, "thumbs", false)
             .await
@@ -200,7 +246,10 @@ mod tests {
         client.delete("thumbs/penguin_mini.png").await.unwrap();
     }
 
-    async fn create_thumbs_from_bytes<T: ObjectStore>(client: &ImageThumbs<T>) {
+    #[tokio::test]
+    #[sequential]
+    async fn create_thumbs_from_bytes() {
+        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
         // create JPG image thumbs
         {
             let test_jpg = File::open("src/test/mock_data/testBucket/penguin.jpg")
@@ -282,7 +331,10 @@ mod tests {
             .unwrap();
     }
 
-    async fn override_behaviour<T: ObjectStore>(client: &ImageThumbs<T>) {
+    #[tokio::test]
+    #[sequential]
+    async fn override_behaviour() {
+        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
         let broken_thumb = ImageDetails {
             stem: "penguin_standard".to_string(),
             format: ImageFormat::Png,

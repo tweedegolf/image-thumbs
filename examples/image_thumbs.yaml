@@ -1,10 +1,10 @@
 thumbs:
-  - name: standard
-    quality: 80
-    size: [640, 480]
-    mode: fit
+  - name: standard      # this name will be added to the thumbnail with an underscore (_)
+    quality: 80         # PNG ignores this variable as it is always lossless
+    size: [ 640, 480 ]  # Target size of the thumbnail. May not always be exact.
+    mode: fit           # available are: 'fit' and 'crop'
 
   - name: mini
     quality: 80
-    size: [40, 40]
+    size: [ 40, 40 ]
     mode: crop
