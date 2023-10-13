@@ -1,59 +1,19 @@
-use ::image::{ImageError, ImageFormat};
+use ::image::ImageFormat;
+use config::Config;
 use object_store::path::Path;
 use object_store::ObjectStore;
-use serde::Deserialize;
 use thiserror::Error;
 
+pub use crate::error::Error;
+pub use crate::error::ThumbsResult;
+pub use crate::model::ImageThumbs;
+use crate::model::Params;
+
+mod error;
 mod gcs;
 mod image;
+mod model;
 mod storage;
-
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("Storage error: {0}")]
-    Storage(#[from] object_store::Error),
-    #[error("Invalid path: {0}")]
-    Path(#[from] object_store::path::Error),
-    #[error("Configuration error: {0}")]
-    Config(#[from] config::ConfigError),
-    #[error("Image error: {0}")]
-    Image(#[from] ImageError),
-    #[error("Image format not supported")]
-    NotSupported,
-    #[error("Utf-8 error")]
-    Utf,
-}
-
-pub type ThumbsResult<T> = Result<T, Error>;
-
-#[derive(Debug)]
-pub struct ImageThumbs<T: ObjectStore> {
-    client: T,
-    settings: Vec<Params>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-struct Params {
-    name: String,
-    quality: u8,
-    size: (u32, u32),
-    mode: Mode,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "snake_case")]
-enum Mode {
-    Fit,
-    Crop,
-}
-
-#[derive(Debug)]
-struct ImageDetails {
-    stem: String,
-    format: ImageFormat,
-    path: Path,
-    bytes: Vec<u8>,
-}
 
 impl<T: ObjectStore> ImageThumbs<T> {
     /// Get image from object storage, create thumbnails, and put them in the `dest_dir` directory
@@ -111,17 +71,24 @@ impl<T: ObjectStore> ImageThumbs<T> {
             .await?;
         self.upload_thumbs(thumbs).await
     }
+
+    fn settings(config: &str) -> ThumbsResult<Vec<Params>> {
+        Ok(Config::builder()
+            .add_source(config::File::with_name(config))
+            .build()?
+            .get("thumbs")?)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::model::ImageDetails;
+    use crate::ImageThumbs;
     use image::ImageFormat;
     use object_store::path::Path;
     use object_store::ObjectStore;
     use tokio::fs::File;
     use tokio::io::{AsyncReadExt, BufReader};
-
-    use crate::{ImageDetails, ImageThumbs};
 
     #[tokio::test]
     async fn from_cloud() {

@@ -8,7 +8,8 @@ use image::{load_from_memory_with_format, ImageFormat};
 use object_store::path::Path;
 use object_store::ObjectStore;
 
-use crate::{Error, ImageDetails, ImageThumbs, Mode, ThumbsResult};
+use crate::model::{ImageDetails, Mode};
+use crate::{Error, ImageThumbs, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {
     pub(crate) async fn create_thumbs_from_bytes(

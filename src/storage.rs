@@ -1,11 +1,26 @@
 use image::ImageFormat;
 use object_store::path::{Path, PathPart};
-use object_store::{ObjectMeta, ObjectStore};
+use object_store::{ClientOptions, ObjectMeta, ObjectStore};
 
+use crate::model::ImageDetails;
 use crate::Error::NotSupported;
-use crate::{ImageDetails, ImageThumbs, ThumbsResult};
+use crate::{ImageThumbs, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {
+    pub(crate) fn client_options() -> ClientOptions {
+        #[allow(unused_mut)]
+        let mut client_options = ClientOptions::new()
+            .with_content_type_for_suffix("jpg", mime::IMAGE_JPEG.to_string())
+            .with_content_type_for_suffix("jpeg", mime::IMAGE_JPEG.to_string())
+            .with_content_type_for_suffix("png", mime::IMAGE_PNG.to_string());
+
+        #[cfg(test)]
+        {
+            client_options = client_options.with_allow_http(true);
+        }
+        client_options
+    }
+
     pub(crate) async fn upload_thumbs(&self, images: Vec<ImageDetails>) -> ThumbsResult<()> {
         for image in images {
             let path = Self::generate_path(&image.path, &image.stem, &image.format);
