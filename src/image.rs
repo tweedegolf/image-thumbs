@@ -12,7 +12,7 @@ use crate::model::{ImageDetails, Mode};
 use crate::{Error, ImageThumbs, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {
-    pub(crate) async fn create_thumbs_from_bytes(
+    pub(crate) async fn create_thumb_images_from_bytes(
         &self,
         bytes: Vec<u8>,
         dest_dir: Path,

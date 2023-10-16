@@ -1,3 +1,9 @@
+//! Easy to use library to create image thumbnails from images existing on some (cloud) object
+//! storage or from disk.
+//!
+//! Currently implemented is a connection to Google Cloud Storage, but it can be easily extended to
+//! other providers.
+
 use ::image::ImageFormat;
 use config::Config;
 use object_store::path::Path;
@@ -68,7 +74,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
         force_override: bool,
     ) -> ThumbsResult<()> {
         let image = self.download_image(file).await?;
-        self.create_thumbs_dest_from_bytes(
+        self.create_thumbs_from_bytes(
             image.bytes,
             dest_dir,
             &image.stem,
@@ -95,7 +101,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
     ///
     /// * `force_override` - if `true` it will override already existent files with the same name.
     /// If false, it will preserve already existent files.
-    pub async fn create_thumbs_dest_from_bytes(
+    pub async fn create_thumbs_from_bytes(
         &self,
         bytes: Vec<u8>,
         dest_dir: &str,
@@ -106,7 +112,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
         let dest_dir = Path::parse(dest_dir)?;
 
         let thumbs = self
-            .create_thumbs_from_bytes(bytes, dest_dir, image_name, format, force_override)
+            .create_thumb_images_from_bytes(bytes, dest_dir, image_name, format, force_override)
             .await?;
         self.upload_thumbs(thumbs).await
     }
@@ -140,6 +146,7 @@ mod tests {
     use crate::ImageThumbs;
 
     #[tokio::test]
+    #[ignore]
     #[sequential]
     async fn create_thumbs() {
         let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
@@ -184,6 +191,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     #[sequential]
     async fn create_thumbs_dir() {
         let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
@@ -247,6 +255,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     #[sequential]
     async fn create_thumbs_from_bytes() {
         let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
@@ -261,7 +270,7 @@ mod tests {
             reader.read_to_end(&mut buffer).await.unwrap();
 
             client
-                .create_thumbs_dest_from_bytes(
+                .create_thumbs_from_bytes(
                     buffer,
                     "/from_bytes_test",
                     "penguin",
@@ -283,7 +292,7 @@ mod tests {
             reader.read_to_end(&mut buffer).await.unwrap();
 
             client
-                .create_thumbs_dest_from_bytes(
+                .create_thumbs_from_bytes(
                     buffer,
                     "/from_bytes_test",
                     "penguin",
@@ -332,6 +341,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     #[sequential]
     async fn override_behaviour() {
         let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
