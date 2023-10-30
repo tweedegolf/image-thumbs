@@ -6,4 +6,4 @@ set -o pipefail
 cargo check
 cargo fmt --check
 cargo clippy -- -Dwarnings
-cargo test
+cargo test -- --include-ignored

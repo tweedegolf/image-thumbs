@@ -2,6 +2,8 @@
 name = "image_thumbs"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Simple to use crate to create thumbnails and store them in a object store like Google Cloud Storage"
 
 [[example]]
 name = "basic"
