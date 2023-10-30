@@ -6,6 +6,11 @@ repository = "https://github.com/tweedegolf/image-thumbs"
 keywords = ["GCS", "image", "thumbnails"]
 license = "MIT OR Apache-2.0"
 description = "Simple to use crate to create thumbnails and store them in a object store like Google Cloud Storage"
+exclude = [
+    ".github/",
+    "compose.yml",
+    "bin/"
+]
 
 [[example]]
 name = "basic"
