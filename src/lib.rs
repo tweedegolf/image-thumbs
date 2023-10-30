@@ -1,4 +1,4 @@
-//! Easy to use library to create image thumbnails from images existing on some (cloud) object
+//! Easy-to-use library to create image thumbnails from images existing on some (cloud) object
 //! storage or from disk.
 //!
 //! Currently implemented is a connection to Google Cloud Storage, but it can be easily extended to

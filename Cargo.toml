@@ -2,13 +2,13 @@
 name = "image_thumbs"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/tweedegolf/image-thumbs"
+keywords = ["GCS", "image", "thumbnails"]
 license = "MIT OR Apache-2.0"
 description = "Simple to use crate to create thumbnails and store them in a object store like Google Cloud Storage"
 
 [[example]]
 name = "basic"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 object_store = { version = "0.7" , features = ["gcp"]}
