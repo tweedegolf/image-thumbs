@@ -16,13 +16,13 @@ exclude = [
 name = "basic"
 
 [dependencies]
-object_store = { version = "0.7", features = ["gcp"] }
-image = { version = "0.24.7", default-features = false, features = ["png", "jpeg"] }
-config = { version = "0.13", default-features = false, features = ["yaml"] }
+object_store = { version = "0.9", features = ["gcp"] }
+image = { version = "0.24", default-features = false, features = ["png", "jpeg"] }
+config = { version = "0.14", default-features = false, features = ["yaml"] }
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.32", features = ["full"] }
 bytes = "1.5"
-futures = "0.3.28"
+futures = "0.3"
 mime = "0.3"
 sequential-test = "0.2"

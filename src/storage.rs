@@ -7,7 +7,7 @@ use crate::Error::NotSupported;
 use crate::{ImageThumbs, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {
-    /// returns options for an [`object_store`] client that maps the file extensions `.jpeg`,
+    /// Returns options for an [`object_store`] client that maps the file extensions `.jpeg`,
     /// `.jpg`, and `.png` to its MIME types.
     ///
     /// Allows `http` connections in case of tests

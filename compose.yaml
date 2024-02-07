@@ -2,6 +2,7 @@ services:
   # FIXME until the fix of #1344 is released for the fake GCS, we have to run the main branch locally
   # FIXME using fork of fsouza/fake-gcs-server - switch back to upstream as soon as fsouza/fake-gcs-server#1164 is merged and released
   gcs-mock:
+    pull_policy: always
     image: tustvold/fake-gcs-server
     volumes:
       - "./src/test/mock_data:/data"
@@ -10,8 +11,8 @@ services:
     command: "-backend memory -scheme http -data /data -log-level debug -public-host gcs-mock:4443"
 
   rust-check:
+    pull_policy: always
     image: docker.tgrep.nl/docker/rust-dev:stable
-    user: '$USER_ID:$GROUP_ID'
     working_dir: /app
     environment:
       GOOGLE_BUCKET: testBucket
