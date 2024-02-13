@@ -36,8 +36,28 @@ impl<T: ObjectStore> ImageThumbs<T> {
         Ok(())
     }
 
-    pub(crate) fn generate_path(base: &Path, name: &str, format: &ImageFormat) -> String {
-        format!("{}/{}.{}", base, name, format.extensions_str()[0])
+    pub(crate) fn generate_path(
+        base: &Path,
+        mut image_stem: &str,
+        image_format: &ImageFormat,
+    ) -> String {
+        image_stem = image_stem.strip_prefix('/').unwrap_or(image_stem);
+        format!(
+            "{}/{}.{}",
+            base,
+            image_stem,
+            image_format.extensions_str()[0]
+        )
+    }
+
+    pub(crate) fn generate_thumb_stem(
+        image_stem: &str,
+        thumb_name: &str,
+        naming_pattern: &str,
+    ) -> String {
+        naming_pattern
+            .replace("{thumb_name}", thumb_name)
+            .replace("{image_stem}", image_stem)
     }
 
     pub(crate) async fn download_image(&self, path: &str) -> ThumbsResult<ImageDetails> {

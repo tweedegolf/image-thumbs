@@ -10,8 +10,11 @@ pub struct ImageThumbs<T> {
 
 #[derive(Deserialize, Debug, Clone)]
 pub(crate) struct Params {
-    /// this name will be added to the thumbnail with an underscore (_)
+    /// Can be used as `{thumb_name}` in the `naming_pattern`.
+    /// If the naming_pattern is not explicitly given, the default is
+    /// "`/{thumb_name}/{image_name}.{image_extension}`"
     pub(crate) name: String,
+    pub(crate) naming_pattern: Option<String>,
     /// PNG ignores this variable as it is always lossless
     pub(crate) quality: u8,
     pub(crate) size: (u32, u32),

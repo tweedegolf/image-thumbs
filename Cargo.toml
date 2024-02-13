@@ -1,6 +1,6 @@
 [package]
 name = "image_thumbs"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 repository = "https://github.com/tweedegolf/image-thumbs"
 keywords = ["GCS", "image", "thumbnails"]
@@ -9,7 +9,8 @@ description = "Simple to use crate to create thumbnails and store them in a obje
 exclude = [
     ".github/",
     "compose.yml",
-    "bin/"
+    "bin/",
+    ".cargo/"
 ]
 
 [[example]]

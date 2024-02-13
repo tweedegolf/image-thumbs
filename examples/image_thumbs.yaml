@@ -1,8 +1,11 @@
 thumbs:
-  - name: standard      # this name will be added to the thumbnail with an underscore (_)
+  - name: standard      # If no naming_pattern is specified, this name will be added to the thumbnail with an underscore (_)
+    # Optional; The default pattern is /{image_stem}_{thumb_name}
+    # The original extension is always appended to the end, e.g., `.png`
+    naming_pattern: "/{thumb_name}/{image_stem}"
     quality: 80         # PNG ignores this variable as it is always lossless
     size: [ 640, 480 ]  # Target size of the thumbnail. May not always be exact.
-    mode: fit           # available are: 'fit' and 'crop'
+    mode: fit           # Available are: 'fit' and 'crop'
 
   - name: mini
     quality: 80

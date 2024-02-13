@@ -1,13 +1,44 @@
+//! # Image Thumbs
 //! Easy-to-use library to create image thumbnails from images existing on some (cloud) object
 //! storage or from disk.
 //!
-//! Currently implemented is a connection to Google Cloud Storage, but it can be easily extended to
-//! other providers.
+//! Currently implemented is a connection to Google Cloud Storage,
+//! but it can be easily extended to other providers.
+//!
+//! ## Supported formats
+//! PNG and JPEG are currently the only supported image formats.
 //!
 //! # How to use
+//! ## Sizes
+//! Configure what thumbnails you would like to have in a .yaml file:
+//! ```yaml
+#![doc = include_str!("../examples/image_thumbs.yaml")]
+//! ```
+//!
+//! ## Google credentials
+//! This crate relies on [object_store](https://crates.io/crates/object_store) for the interaction
+//! with the storage backend.
+//! Currently, this crate only supports Google Cloud Storage.
+//!
+//! To configure the Google Service Account, use one of the following environment variables as
+//! [described in the object_store](https://docs.rs/object_store/0.9.0/object_store/gcp/struct.GoogleCloudStorageBuilder.html#method.from_env)
+//! crate.
+//!
+//! ```text
+//! GOOGLE_SERVICE_ACCOUNT: location of service account file
+//! GOOGLE_SERVICE_ACCOUNT_PATH: (alias) location of service account file
+//! SERVICE_ACCOUNT: (alias) location of service account file
+//! GOOGLE_SERVICE_ACCOUNT_KEY: JSON serialized service account key
+//! GOOGLE_BUCKET: bucket name
+//! GOOGLE_BUCKET_NAME: (alias) bucket name
+//! ```
+//!
+//! Then use it in your code
 //! ```no_run
 //! # #[tokio::main]
 //! # async fn main() {
+//!     // Path to your thumbnail configuration yaml. You may specify the .yaml extension in the
+//!     // path, but you don't need to.
 //!     let thumbs = image_thumbs::ImageThumbs::new("examples/image_thumbs")
 //!         .await
 //!         .unwrap();

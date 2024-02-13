@@ -24,11 +24,17 @@ impl<T: ObjectStore> ImageThumbs<T> {
 
         let mut res = Vec::with_capacity(self.settings.len());
         for params in self.settings.iter() {
-            let new_name = format!("{stem}_{}", params.name);
+            let naming_pattern = params
+                .naming_pattern
+                .clone()
+                .unwrap_or("/{image_stem}_{thumb_name}".to_string());
+            let thumb_stem = Self::generate_thumb_stem(stem, &params.name, &naming_pattern);
             if !force_override
                 && self
                     .head(&Path::parse(Self::generate_path(
-                        &dest_dir, &new_name, &format,
+                        &dest_dir,
+                        &thumb_stem,
+                        &format,
                     ))?)
                     .await
                     .is_ok()
@@ -64,7 +70,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
                 _ => Err(Error::NotSupported)?,
             };
             res.push(ImageDetails {
-                stem: new_name,
+                stem: thumb_stem,
                 format,
                 path: dest_dir.clone(),
                 bytes: buf,

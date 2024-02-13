@@ -15,6 +15,7 @@ services:
     image: docker.tgrep.nl/docker/rust-dev:stable
     working_dir: /app
     environment:
+      CARGO_TARGET_DIR: .cargo
       GOOGLE_BUCKET: testBucket
       GOOGLE_SERVICE_ACCOUNT: src/test/gcs_mock.json
     volumes:
