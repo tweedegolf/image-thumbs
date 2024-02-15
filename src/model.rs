@@ -9,7 +9,7 @@ pub struct ImageThumbs<T> {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub(crate) struct Params {
+pub struct Params {
     /// Can be used as `{thumb_name}` in the `naming_pattern`.
     /// If the naming_pattern is not explicitly given, the default is
     /// "`/{thumb_name}/{image_name}.{image_extension}`"

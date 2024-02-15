@@ -1,5 +1,6 @@
 use object_store::gcp::{GoogleCloudStorage, GoogleCloudStorageBuilder};
 
+use crate::model::Params;
 use crate::{ImageThumbs, ThumbsResult};
 
 impl ImageThumbs<GoogleCloudStorage> {
@@ -25,5 +26,13 @@ impl ImageThumbs<GoogleCloudStorage> {
             client,
             settings: Self::settings(config)?,
         })
+    }
+
+    pub async fn new_with_settings(settings: Vec<Params>) -> ThumbsResult<Self> {
+        let client = GoogleCloudStorageBuilder::from_env()
+            .with_client_options(Self::client_options())
+            .build()?;
+
+        Ok(Self { client, settings })
     }
 }
