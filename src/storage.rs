@@ -18,7 +18,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
             .with_content_type_for_suffix("jpeg", mime::IMAGE_JPEG.to_string())
             .with_content_type_for_suffix("png", mime::IMAGE_PNG.to_string());
 
-        #[cfg(test)]
+        #[cfg(debug_assertions)]
         {
             client_options = client_options.with_allow_http(true);
         }
