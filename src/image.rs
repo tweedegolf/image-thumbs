@@ -55,11 +55,11 @@ impl<T: ObjectStore> ImageThumbs<T> {
             };
 
             match format {
-                ImageFormat::Png => {
+                ImageFormat::Jpeg => {
                     let encoder = JpegEncoder::new_with_quality(writer, params.quality);
                     thumbnail.write_with_encoder(encoder)?;
                 }
-                ImageFormat::Jpeg => {
+                ImageFormat::Png => {
                     let encoder = PngEncoder::new_with_quality(
                         writer,
                         CompressionType::default(),

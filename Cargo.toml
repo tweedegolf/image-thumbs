@@ -1,6 +1,6 @@
 [package]
 name = "image_thumbs"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 repository = "https://github.com/tweedegolf/image-thumbs"
 keywords = ["GCS", "image", "thumbnails"]
@@ -18,7 +18,7 @@ name = "basic"
 
 [dependencies]
 object_store = { version = "0.9", features = ["gcp"] }
-image = { version = "0.24", default-features = false, features = ["png", "jpeg"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 config = { version = "0.14", default-features = false, features = ["yaml"] }
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
