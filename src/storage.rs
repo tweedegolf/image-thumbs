@@ -1,4 +1,4 @@
-use image::ImageFormat;
+use image::{guess_format, ImageFormat};
 use object_store::path::{Path, PathPart};
 use object_store::{ClientOptions, ObjectMeta, ObjectStore};
 
@@ -62,7 +62,6 @@ impl<T: ObjectStore> ImageThumbs<T> {
 
     pub(crate) async fn download_image(&self, path: &str) -> ThumbsResult<ImageDetails> {
         let result = self.client.get(&Path::parse(path)?).await?;
-        let format = ImageFormat::from_path(result.meta.location.as_ref())?;
         let stem = Self::extract_stem(&result.meta.location)?.to_string();
 
         let path = result.meta.location.parts().collect::<Vec<PathPart>>();
@@ -75,6 +74,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
         };
 
         let bytes = result.bytes().await?.to_vec();
+        let format = guess_format(&bytes)?;
 
         Ok(ImageDetails {
             stem,
@@ -85,11 +85,10 @@ impl<T: ObjectStore> ImageThumbs<T> {
     }
 
     fn extract_stem(path: &Path) -> ThumbsResult<&str> {
-        let (stem, _) = path
-            .filename()
-            .ok_or(NotSupported)?
-            .rsplit_once('.')
-            .ok_or(NotSupported)?;
+        let (stem, _) = match path.filename() {
+            None => Err(NotSupported)?,
+            Some(filename) => filename.rsplit_once('.').unwrap_or((filename, "")),
+        };
         Ok(stem)
     }
 

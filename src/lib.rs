@@ -418,13 +418,11 @@ mod tests {
             .download_image("thumbs/penguin_mini.jpg")
             .await
             .unwrap();
-        assert_eq!(
+        assert!(
             client
                 .download_image("thumbs/penguin_standard.png")
                 .await
-                .unwrap()
-                .bytes,
-            vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                .is_err(),
             "This image should not be overwritten"
         );
         client

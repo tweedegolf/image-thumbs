@@ -10,11 +10,20 @@ pub enum Error {
     #[error("Configuration error: {0}")]
     Config(#[from] config::ConfigError),
     #[error("Image error: {0}")]
-    Image(#[from] ImageError),
+    Image(ImageError),
     #[error("Image format not supported")]
     NotSupported,
     #[error("Utf-8 error")]
     Utf,
+}
+
+impl From<ImageError> for Error {
+    fn from(value: ImageError) -> Self {
+        match value {
+            ImageError::Unsupported(_) => Self::NotSupported,
+            _ => Self::Image(value),
+        }
+    }
 }
 
 pub type ThumbsResult<T> = Result<T, Error>;
