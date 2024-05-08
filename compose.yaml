@@ -12,7 +12,7 @@ services:
 
   rust-check:
     pull_policy: always
-    image: docker.tgrep.nl/docker/rust-dev:stable
+    image: ghcr.io/tweedegolf/rust-dev:stable
     working_dir: /app
     environment:
       CARGO_TARGET_DIR: .cargo
