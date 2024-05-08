@@ -94,11 +94,14 @@ impl<T: ObjectStore> ImageThumbs<T> {
             None => None,
         };
 
-        let names = self.list_folder(prefix.as_ref()).await?;
-        let existent_thumbs = self.list_folder(Some(&Path::parse(dest_dir)?)).await?;
-        let images_to_thumbnail = self.filter_existent_thumbs(names, &existent_thumbs)?;
+        let mut names = self.list_folder(prefix.as_ref()).await?;
 
-        for name in images_to_thumbnail {
+        if force_override {
+            let existent_thumbs = self.list_folder(Some(&Path::parse(dest_dir)?)).await?;
+            names = self.filter_existent_thumbs(names, &existent_thumbs)?;
+        }
+
+        for name in names {
             self.create_thumbs(name.as_ref(), dest_dir, force_override)
                 .await?;
         }
@@ -112,7 +115,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
     /// * `file` - image to create thumbnails for.
     ///
     /// * `dest_dir` - directory to store all created thumbnails.
-    /// This directory will be checked for already existent thumbnails, if `force_override` is false.
+    /// This directory will be checked for already existent thumbnails if `force_override` is false.
     ///
     /// * `force_override` - if `true` it will override already existent files with the same name.
     /// If false, it will preserve already existent files.
