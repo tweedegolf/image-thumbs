@@ -132,6 +132,42 @@ impl<T: ObjectStore> ImageThumbs<T> {
             &image.stem,
             image.format,
             force_override,
+            (0.5, 0.5),
+        )
+        .await
+    }
+
+    /// Gets one image from the object storage, creates thumbnails for it, and puts them in the
+    /// `dest_dir` directory.
+    /// This function allows providing a manual definition of the image center, i.e., the most
+    /// relevant part, to avoid cutting it of.
+    ///
+    /// # Arguments
+    /// * `file` - image to create thumbnails for.
+    ///
+    /// * `dest_dir` - directory to store all created thumbnails.
+    /// This directory will be checked for already existent thumbnails if `force_override` is false.
+    ///
+    /// * `force_override` - if `true` it will override already existent files with the same name.
+    /// If false, it will preserve already existent files.
+    ///
+    /// # `center` - (width, height) in percent (i.e., between 0 and 1) where to place the center of
+    /// the image, if the edges need to be cut off.
+    pub async fn create_thumbs_man_center(
+        &self,
+        file: &str,
+        dest_dir: &str,
+        force_override: bool,
+        center: (f32, f32),
+    ) -> ThumbsResult<()> {
+        let image = self.download_image(file).await?;
+        self.create_thumbs_from_bytes(
+            image.bytes,
+            dest_dir,
+            &image.stem,
+            image.format,
+            force_override,
+            center,
         )
         .await
     }
@@ -160,11 +196,19 @@ impl<T: ObjectStore> ImageThumbs<T> {
         image_name: &str,
         format: ImageFormat,
         force_override: bool,
+        center: (f32, f32),
     ) -> ThumbsResult<()> {
         let dest_dir = Path::parse(dest_dir)?;
 
         let thumbs = self
-            .create_thumb_images_from_bytes(bytes, dest_dir, image_name, format, force_override)
+            .create_thumb_images_from_bytes(
+                bytes,
+                dest_dir,
+                image_name,
+                format,
+                force_override,
+                center,
+            )
             .await?;
         self.upload_thumbs(thumbs).await
     }
@@ -328,6 +372,7 @@ mod tests {
                     "penguin",
                     ImageFormat::Jpeg,
                     false,
+                    (0.5, 0.5),
                 )
                 .await
                 .unwrap();
@@ -350,6 +395,7 @@ mod tests {
                     "penguin",
                     ImageFormat::Png,
                     false,
+                    (0.5, 0.5),
                 )
                 .await
                 .unwrap();
