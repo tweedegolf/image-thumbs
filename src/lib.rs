@@ -76,13 +76,13 @@ impl<T: ObjectStore> ImageThumbs<T> {
     ///
     /// # Arguments
     /// * `directory` - directory to create thumbnails for.
-    /// It will list all objects on this level and create thumbnails (if they do not already exist).
+    ///   It will list all objects on this level and create thumbnails (if they do not already exist).
     ///
     /// * `dest_dir` - directory to store all created thumbnails.
-    /// This directory will be checked for already existent thumbnails, if `force_override` is false.
+    ///   This directory will be checked for already existent thumbnails, if `force_override` is false.
     ///
     /// * `force_override` - if `true` it will override already existent files with the same name.
-    /// If false, it will preserve already existent files.
+    ///   If false, it will preserve already existent files.
     pub async fn create_thumbs_dir(
         &self,
         directory: Option<&str>,
@@ -115,10 +115,10 @@ impl<T: ObjectStore> ImageThumbs<T> {
     /// * `file` - image to create thumbnails for.
     ///
     /// * `dest_dir` - directory to store all created thumbnails.
-    /// This directory will be checked for already existent thumbnails if `force_override` is false.
+    ///   This directory will be checked for already existent thumbnails if `force_override` is false.
     ///
     /// * `force_override` - if `true` it will override already existent files with the same name.
-    /// If false, it will preserve already existent files.
+    ///   If false, it will preserve already existent files.
     pub async fn create_thumbs(
         &self,
         file: &str,
@@ -146,10 +146,10 @@ impl<T: ObjectStore> ImageThumbs<T> {
     /// * `file` - image to create thumbnails for.
     ///
     /// * `dest_dir` - directory to store all created thumbnails.
-    /// This directory will be checked for already existent thumbnails if `force_override` is false.
+    ///   This directory will be checked for already existent thumbnails if `force_override` is false.
     ///
     /// * `force_override` - if `true` it will override already existent files with the same name.
-    /// If false, it will preserve already existent files.
+    ///   If false, it will preserve already existent files.
     ///
     /// # `center` - (width, height) in percent (i.e., between 0 and 1) where to place the center of
     /// the image, if the edges need to be cut off.
@@ -179,16 +179,16 @@ impl<T: ObjectStore> ImageThumbs<T> {
     /// * `bytes` - raw image bytes to create thumbnails for.
     ///
     /// * `dest_dir` - directory to store all created thumbnails.
-    /// This directory will be checked for already existent thumbnails, if `force_override` is false.
+    ///   This directory will be checked for already existent thumbnails if `force_override` is false.
     ///
     /// * `image_name` - name used for the created thumbnails. Should not include the extension.
-    /// Final thumbnail names will be of the form `<image_name>_<thumbnail_name>.<extension>`
+    ///   The Final thumbnail names will be of the form `<image_name>_<thumbnail_name>.<extension>`
     ///
     /// * `format` - format of the input image. The output image will have the same type.
-    /// Currently supported are JPG and PNG.
+    ///   Currently supported are JPG and PNG.
     ///
     /// * `force_override` - if `true` it will override already existent files with the same name.
-    /// If false, it will preserve already existent files.
+    ///   If false, it will preserve already existent files.
     pub async fn create_thumbs_from_bytes(
         &self,
         bytes: Vec<u8>,

@@ -7,7 +7,7 @@ services:
     volumes:
       - "./src/test/mock_data:/data"
     ports:
-      - 4443:4443
+      - "4443:4443"
     command: "-backend memory -scheme http -data /data -log-level debug -public-host gcs-mock:4443"
 
   rust-check:
