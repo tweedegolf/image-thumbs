@@ -21,12 +21,11 @@ impl<T: ObjectStore> ImageThumbs<T> {
         force_override: bool,
         center: (f32, f32),
     ) -> ThumbsResult<Vec<ImageDetails>> {
+        
         let image = load_from_memory_with_format(&bytes, format)?;
 
         let mut res = Vec::with_capacity(self.settings.len());
         for params in self.settings.iter() {
-            let image = crop_aspect_ratio_with_center(&image, params.size, center);
-
             let naming_pattern = params
                 .naming_pattern
                 .clone()
@@ -50,11 +49,14 @@ impl<T: ObjectStore> ImageThumbs<T> {
 
             let thumbnail = match params.mode {
                 Mode::Fit => image.thumbnail(params.size.0, params.size.1),
-                Mode::Crop => image.resize_to_fill(
-                    params.size.0,
-                    params.size.1,
-                    imageops::FilterType::Nearest,
-                ),
+                Mode::Crop => {
+                    let image = crop_aspect_ratio_with_center(&image, params.size, center);
+                    image.resize_to_fill(
+                        params.size.0,
+                        params.size.1,
+                        imageops::FilterType::Nearest,
+                    )
+                },
             };
 
             match format {
