@@ -21,7 +21,6 @@ impl<T: ObjectStore> ImageThumbs<T> {
         force_override: bool,
         center: (f32, f32),
     ) -> ThumbsResult<Vec<ImageDetails>> {
-        
         let image = load_from_memory_with_format(&bytes, format)?;
 
         let mut res = Vec::with_capacity(self.settings.len());
@@ -56,7 +55,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
                         params.size.1,
                         imageops::FilterType::Nearest,
                     )
-                },
+                }
             };
 
             match format {
