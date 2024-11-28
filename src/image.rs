@@ -3,7 +3,7 @@ use std::io::Cursor;
 use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png;
 use image::codecs::png::{CompressionType, PngEncoder};
-use image::{imageops, DynamicImage};
+use image::{imageops, DynamicImage, GenericImageView};
 use image::{load_from_memory_with_format, ImageFormat};
 use object_store::path::Path;
 use object_store::ObjectStore;
@@ -45,14 +45,14 @@ impl<T: ObjectStore> ImageThumbs<T> {
 
             let mut buf = Vec::new();
             let writer = Cursor::new(&mut buf);
-
+            let (thumbnail_width, thumbnail_height) = limit_max_size(params.size, image.dimensions(), params.mode);
             let thumbnail = match params.mode {
-                Mode::Fit => image.thumbnail(params.size.0, params.size.1),
+                Mode::Fit => image.thumbnail(thumbnail_width, thumbnail_height),
                 Mode::Crop => {
                     let image = crop_aspect_ratio_with_center(&image, params.size, center);
                     image.resize_to_fill(
-                        params.size.0,
-                        params.size.1,
+                        thumbnail_width,
+                        thumbnail_height,
                         imageops::FilterType::Nearest,
                     )
                 }
@@ -81,6 +81,34 @@ impl<T: ObjectStore> ImageThumbs<T> {
             })
         }
         Ok(res)
+    }
+}
+
+/// Limits the size of the thumbnail to the size of the original image to prevent up-scaling.
+/// It preserves the aspect ratio of the requested thumbnail size.
+fn limit_max_size(target_size: (u32, u32), original_size: (u32, u32), mode: Mode) -> (u32, u32) {
+    let target_aspect_ratio = target_size.0 as f64 / target_size.1 as f64;
+
+    if target_size.0 > original_size.0 && target_size.1 > original_size.1 {
+        match mode {
+            Mode::Fit => (original_size.0, original_size.1),
+            Mode::Crop => (
+                (original_size.0 as f64 * target_aspect_ratio) as u32,
+                (original_size.1 as f64 / target_aspect_ratio) as u32,
+            ),
+        }
+    } else if target_size.0 > original_size.0 && matches!(mode, Mode::Crop) {
+        (
+            original_size.0,
+            (original_size.1 as f64 / target_aspect_ratio).round() as u32,
+        )
+    } else if target_size.1 > original_size.1 && matches!(mode, Mode::Crop) {
+        (
+            (original_size.0 as f64 * target_aspect_ratio).round() as u32,
+            original_size.1,
+        )
+    } else {
+        target_size
     }
 }
 
