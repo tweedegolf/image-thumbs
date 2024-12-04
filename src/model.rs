@@ -21,7 +21,7 @@ pub struct Params {
     pub(crate) mode: Mode,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum Mode {
     /// The image's aspect ratio is preserved. The image is scaled to the maximum possible size that
