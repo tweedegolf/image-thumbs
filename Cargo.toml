@@ -1,6 +1,6 @@
 [package]
 name = "image_thumbs"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 repository = "https://github.com/tweedegolf/image-thumbs"
 keywords = ["GCS", "image", "thumbnails"]
