@@ -8,7 +8,7 @@ use image::{load_from_memory_with_format, ImageFormat};
 use object_store::path::Path;
 use object_store::ObjectStore;
 
-use crate::model::{ImageDetails, Mode};
+use crate::model::{ImageDetails, Mode, Params};
 use crate::{Error, ImageThumbs, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {
@@ -43,21 +43,10 @@ impl<T: ObjectStore> ImageThumbs<T> {
                 continue; // do not compute already existent thumbnails
             }
 
+            let thumbnail = calculate_thumbnail(&image, params, center)?;
+
             let mut buf = Vec::new();
             let writer = Cursor::new(&mut buf);
-            let (thumbnail_width, thumbnail_height) = limit_max_size(params.size, image.dimensions(), params.mode);
-            let thumbnail = match params.mode {
-                Mode::Fit => image.thumbnail(thumbnail_width, thumbnail_height),
-                Mode::Crop => {
-                    let image = crop_aspect_ratio_with_center(&image, params.size, center);
-                    image.resize_to_fill(
-                        thumbnail_width,
-                        thumbnail_height,
-                        imageops::FilterType::Nearest,
-                    )
-                }
-            };
-
             match format {
                 ImageFormat::Jpeg => {
                     let encoder = JpegEncoder::new_with_quality(writer, params.quality);
@@ -73,6 +62,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
                 }
                 _ => Err(Error::NotSupported)?,
             };
+
             res.push(ImageDetails {
                 stem: thumb_stem,
                 format,
@@ -84,29 +74,39 @@ impl<T: ObjectStore> ImageThumbs<T> {
     }
 }
 
-/// Limits the size of the thumbnail to the size of the original image to prevent up-scaling.
-/// It preserves the aspect ratio of the requested thumbnail size.
-fn limit_max_size(target_size: (u32, u32), original_size: (u32, u32), mode: Mode) -> (u32, u32) {
-    let target_aspect_ratio = target_size.0 as f64 / target_size.1 as f64;
-
-    if target_size.0 > original_size.0 && target_size.1 > original_size.1 {
-        match mode {
-            Mode::Fit => (original_size.0, original_size.1),
-            Mode::Crop => (
-                (original_size.0 as f64 * target_aspect_ratio) as u32,
-                (original_size.1 as f64 / target_aspect_ratio) as u32,
-            ),
+fn calculate_thumbnail(
+    image: &DynamicImage,
+    params: &Params,
+    center: (f32, f32),
+) -> ThumbsResult<DynamicImage> {
+    Ok(match params.mode {
+        Mode::Fit => {
+            let (width, height) = limit_size_fit(params.size, image.dimensions());
+            image.thumbnail(width, height)
         }
-    } else if target_size.0 > original_size.0 && matches!(mode, Mode::Crop) {
-        (
-            original_size.0,
-            (original_size.1 as f64 / target_aspect_ratio).round() as u32,
-        )
-    } else if target_size.1 > original_size.1 && matches!(mode, Mode::Crop) {
-        (
-            (original_size.0 as f64 * target_aspect_ratio).round() as u32,
-            original_size.1,
-        )
+        Mode::Crop => {
+            let image = crop_aspect_ratio_with_center(image, params.size, center);
+            let (width, height) = limit_size_crop(params.size, image.dimensions());
+            image.resize_to_fill(width, height, imageops::FilterType::Nearest)
+        }
+    })
+}
+
+fn limit_size_fit(target_size: (u32, u32), original_size: (u32, u32)) -> (u32, u32) {
+    if target_size.0 > original_size.0 && target_size.1 > original_size.1 {
+        original_size
+    } else if target_size.0 > original_size.0 {
+        (original_size.0, target_size.1)
+    } else if target_size.1 > original_size.1 {
+        (target_size.0, original_size.1)
+    } else {
+        target_size
+    }
+}
+
+fn limit_size_crop(target_size: (u32, u32), original_size: (u32, u32)) -> (u32, u32) {
+    if target_size.0 > original_size.0 || target_size.1 > original_size.1 {
+        original_size
     } else {
         target_size
     }
@@ -159,7 +159,8 @@ fn crop_aspect_ratio_with_center(
 mod test {
     use image::{ColorType, DynamicImage};
 
-    use crate::image::crop_aspect_ratio_with_center;
+    use super::*;
+    use crate::model::{Mode, Params};
 
     #[test]
     fn crop_center_1() {
@@ -222,5 +223,160 @@ mod test {
         let cropped = crop_aspect_ratio_with_center(&image, (10, 15), (0.9, 0.1));
         assert_eq!(cropped.width(), 66);
         assert_eq!(cropped.height(), 100);
+    }
+
+    #[test]
+    fn crop_center_4() {
+        let image = DynamicImage::new(150, 100, ColorType::L8);
+
+        let cropped = crop_aspect_ratio_with_center(&image, (15, 10), (0.5, 0.5));
+        assert_eq!(cropped.width(), 150, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(cropped.height(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+
+        let cropped = crop_aspect_ratio_with_center(&image, (100, 150), (0.5, 0.5));
+        assert_eq!(cropped.width(), 67);
+        assert_eq!(cropped.height(), 100);
+
+        let cropped = crop_aspect_ratio_with_center(&image, (100, 150), (0., 1.));
+        assert_eq!(cropped.width(), 67);
+        assert_eq!(cropped.height(), 100);
+
+        let cropped = crop_aspect_ratio_with_center(&image, (100, 150), (0.9, 0.1));
+        assert_eq!(cropped.width(), 66);
+        assert_eq!(cropped.height(), 100);
+    }
+
+    #[test]
+    fn correct_final_size_crop_square() {
+        let image = DynamicImage::new(100, 100, ColorType::L8);
+        let params = Params {
+            name: "".to_string(),
+            naming_pattern: None,
+            quality: 0,
+            size: (0, 0),
+            mode: Mode::Crop,
+        };
+
+        for (target_size, expect_output) in [
+            ((10, 10), (10, 10)),
+            ((200, 200), (100, 100)),
+            ((90, 200), (45, 100)),
+            ((200, 90), (100, 45)),
+        ] {
+            let cropped = calculate_thumbnail(
+                &image,
+                &Params {
+                    size: target_size,
+                    ..params.clone()
+                },
+                (0.5, 0.5),
+            )
+            .unwrap();
+            assert_eq!(cropped.width(), expect_output.0);
+            assert_eq!(cropped.height(), expect_output.1);
+        }
+    }
+
+    #[test]
+    fn correct_final_size_crop_non_square() {
+        let portrait = DynamicImage::new(100, 150, ColorType::L8);
+        let landscape = DynamicImage::new(150, 100, ColorType::L8);
+        let params = Params {
+            name: "".to_string(),
+            naming_pattern: None,
+            quality: 0,
+            size: (0, 0),
+            mode: Mode::Crop,
+        };
+
+        for (image, (target_size, expect_output)) in [
+            (&portrait, ((10, 10), (10, 10))),
+            (&portrait, ((200, 200), (100, 100))),
+            (&portrait, ((90, 200), (68, 150))),
+            (&portrait, ((200, 90), (100, 45))),
+            (&landscape, ((10, 10), (10, 10))),
+            (&landscape, ((200, 200), (100, 100))),
+            (&landscape, ((90, 200), (45, 100))),
+            (&landscape, ((200, 90), (150, 68))),
+        ] {
+            let cropped = calculate_thumbnail(
+                image,
+                &Params {
+                    size: target_size,
+                    ..params.clone()
+                },
+                (0.5, 0.5),
+            )
+            .unwrap();
+            assert_eq!(cropped.width(), expect_output.0);
+            assert_eq!(cropped.height(), expect_output.1);
+        }
+    }
+
+    #[test]
+    fn correct_final_size_fit_square() {
+        let image = DynamicImage::new(100, 100, ColorType::L8);
+        let params = Params {
+            name: "".to_string(),
+            naming_pattern: None,
+            quality: 0,
+            size: (0, 0),
+            mode: Mode::Fit,
+        };
+
+        for (target_size, expect_output) in [
+            ((10, 10), (10, 10)),
+            ((200, 200), (100, 100)),
+            ((90, 200), (90, 90)),
+            ((200, 90), (90, 90)),
+        ] {
+            let cropped = calculate_thumbnail(
+                &image,
+                &Params {
+                    size: target_size,
+                    ..params.clone()
+                },
+                (0.5, 0.5),
+            )
+            .unwrap();
+            assert_eq!(cropped.width(), expect_output.0);
+            assert_eq!(cropped.height(), expect_output.1);
+        }
+    }
+
+    #[test]
+    fn correct_final_size_fit_non_square() {
+        let portrait = DynamicImage::new(100, 150, ColorType::L8);
+        let landscape = DynamicImage::new(150, 100, ColorType::L8);
+        let params = Params {
+            name: "".to_string(),
+            naming_pattern: None,
+            quality: 0,
+            size: (0, 0),
+            mode: Mode::Fit,
+        };
+
+        for (image, (target_size, expect_output)) in [
+            (&portrait, ((10, 10), (7, 10))),
+            (&portrait, ((200, 200), (100, 150))),
+            (&portrait, ((90, 200), (90, 135))),
+            (&portrait, ((200, 90), (60, 90))),
+            (&landscape, ((10, 10), (10, 7))),
+            (&landscape, ((200, 200), (150, 100))),
+            (&landscape, ((90, 200), (90, 60))),
+            (&landscape, ((200, 90), (135, 90))),
+        ] {
+            let cropped = calculate_thumbnail(
+                image,
+                &Params {
+                    size: target_size,
+                    ..params.clone()
+                },
+                (0.5, 0.5),
+            )
+            .unwrap();
+            assert_eq!(cropped.width(), expect_output.0);
+            assert_eq!(cropped.height(), expect_output.1);
+        }
     }
 }
