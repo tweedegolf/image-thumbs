@@ -39,9 +39,7 @@
 //! # async fn main() {
 //!     // Path to your thumbnail configuration yaml. You may specify the .yaml extension in the
 //!     // path, but you don't need to.
-//!     let thumbs = image_thumbs::ImageThumbs::new("examples/image_thumbs")
-//!         .await
-//!         .unwrap();
+//!     let thumbs = image_thumbs::ImageThumbs::new("examples/image_thumbs").unwrap();
 //!     thumbs
 //!         .create_thumbs("penguin.jpg", "/thumbs", false)
 //!         .await
@@ -62,7 +60,8 @@ use thiserror::Error;
 pub use crate::error::Error;
 pub use crate::error::ThumbsResult;
 pub use crate::model::ImageThumbs;
-use crate::model::Params;
+pub use model::Params;
+pub use object_store::gcp::GoogleCloudStorage;
 
 mod error;
 mod gcs;
@@ -245,7 +244,7 @@ mod tests {
     #[ignore]
     #[sequential]
     async fn create_thumbs() {
-        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
+        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
         client
             .create_thumbs("penguin.jpg", "/test_dir", false)
             .await
@@ -290,7 +289,7 @@ mod tests {
     #[ignore]
     #[sequential]
     async fn create_thumbs_dir() {
-        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
+        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
         client
             .create_thumbs_dir(None, "thumbs", false)
             .await
@@ -354,7 +353,7 @@ mod tests {
     #[ignore]
     #[sequential]
     async fn create_thumbs_from_bytes() {
-        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
+        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
         // create JPG image thumbs
         {
             let test_jpg = File::open("src/test/mock_data/testBucket/penguin.jpg")
@@ -442,7 +441,7 @@ mod tests {
     #[ignore]
     #[sequential]
     async fn override_behaviour() {
-        let client = ImageThumbs::new("src/test/image_thumbs").await.unwrap();
+        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
         let broken_thumb = ImageDetails {
             stem: "penguin_standard".to_string(),
             format: ImageFormat::Png,

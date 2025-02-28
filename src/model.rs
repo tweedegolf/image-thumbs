@@ -1,11 +1,22 @@
 use image::ImageFormat;
 use object_store::path::Path;
 use serde::Deserialize;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 #[derive(Debug)]
 pub struct ImageThumbs<T> {
-    pub(crate) client: T,
-    pub(crate) settings: Vec<Params>,
+    pub(crate) client: Arc<RwLock<T>>,
+    pub(crate) settings: Arc<Vec<Params>>,
+}
+
+impl<T> Clone for ImageThumbs<T> {
+    fn clone(&self) -> Self {
+        Self {
+            client: Arc::clone(&self.client),
+            settings: Arc::clone(&self.settings),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -13,17 +24,17 @@ pub struct Params {
     /// Can be used as `{thumb_name}` in the `naming_pattern`.
     /// If the naming_pattern is not explicitly given, the default is
     /// "`/{thumb_name}/{image_name}.{image_extension}`"
-    pub(crate) name: String,
-    pub(crate) naming_pattern: Option<String>,
+    pub name: String,
+    pub naming_pattern: Option<String>,
     /// PNG ignores this variable as it is always lossless
-    pub(crate) quality: u8,
-    pub(crate) size: (u32, u32),
-    pub(crate) mode: Mode,
+    pub quality: u8,
+    pub size: (u32, u32),
+    pub mode: Mode,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum Mode {
+pub enum Mode {
     /// The image's aspect ratio is preserved. The image is scaled to the maximum possible size that
     /// fits within the bounds.
     Fit,

@@ -1,6 +1,7 @@
 use image::{guess_format, ImageFormat};
 use object_store::path::{Path, PathPart};
 use object_store::{ClientOptions, ObjectMeta, ObjectStore};
+use std::ops::Deref;
 
 use crate::model::ImageDetails;
 use crate::Error::NotSupported;
@@ -29,6 +30,8 @@ impl<T: ObjectStore> ImageThumbs<T> {
         for image in images {
             let path = Self::generate_path(&image.path, &image.stem, &image.format);
             self.client
+                .read()
+                .await
                 .put(&Path::parse(path)?, image.bytes.into())
                 .await?;
         }
@@ -61,7 +64,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
     }
 
     pub(crate) async fn download_image(&self, path: &str) -> ThumbsResult<ImageDetails> {
-        let result = self.client.get(&Path::parse(path)?).await?;
+        let result = self.client.read().await.get(&Path::parse(path)?).await?;
         let stem = Self::extract_stem(&result.meta.location)?.to_string();
 
         let path = result.meta.location.parts().collect::<Vec<PathPart>>();
@@ -95,6 +98,8 @@ impl<T: ObjectStore> ImageThumbs<T> {
     pub(crate) async fn list_folder(&self, prefix: Option<&Path>) -> ThumbsResult<Vec<Path>> {
         Ok(self
             .client
+            .read()
+            .await
             .list_with_delimiter(prefix)
             .await?
             .objects
@@ -104,7 +109,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
     }
 
     pub(crate) async fn head(&self, path: &Path) -> ThumbsResult<ObjectMeta> {
-        Ok(self.client.head(path).await?)
+        Ok(self.client.read().await.head(path).await?)
     }
 
     pub(crate) fn filter_existent_thumbs(
@@ -118,7 +123,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
                 .ok_or(NotSupported)?;
             let file_stem = image.filename().ok_or(NotSupported)?;
             let mut has_all_thumbs = true;
-            for params in self.settings.clone() {
+            for params in self.settings.deref() {
                 let target_name = format!(
                     "{}_{}.{}",
                     file_stem,
@@ -140,7 +145,7 @@ impl<T: ObjectStore> ImageThumbs<T> {
 
     #[cfg(test)]
     pub(crate) async fn delete(&self, path: &str) -> ThumbsResult<()> {
-        self.client.delete(&Path::parse(path)?).await?;
+        self.client.read().await.delete(&Path::parse(path)?).await?;
         Ok(())
     }
 }

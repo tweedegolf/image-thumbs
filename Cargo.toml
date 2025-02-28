@@ -19,7 +19,7 @@ name = "basic"
 [dependencies]
 object_store = { version = "0.11.0", features = ["gcp"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
-config = { version = "0.14", default-features = false, features = ["yaml"] }
+config = { version = "0.15.8", default-features = false, features = ["yaml"] }
 thiserror = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.41", features = ["full"] }

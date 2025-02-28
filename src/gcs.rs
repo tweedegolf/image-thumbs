@@ -1,7 +1,8 @@
-use object_store::gcp::{GoogleCloudStorage, GoogleCloudStorageBuilder};
-
 use crate::model::Params;
 use crate::{ImageThumbs, ThumbsResult};
+use object_store::gcp::{GoogleCloudStorage, GoogleCloudStorageBuilder};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 impl ImageThumbs<GoogleCloudStorage> {
     /// Creates new ImageThumbs instance connected to Google Cloud Storage using the environment
@@ -17,22 +18,25 @@ impl ImageThumbs<GoogleCloudStorage> {
     ///
     /// # Arguments
     /// * `config` - Path to the config file from the crate root (`.yaml` may be omitted)
-    pub async fn new(config: &str) -> ThumbsResult<Self> {
+    pub fn new(config: &str) -> ThumbsResult<Self> {
         let client = GoogleCloudStorageBuilder::from_env()
             .with_client_options(Self::client_options())
             .build()?;
 
         Ok(Self {
-            client,
-            settings: Self::settings(config)?,
+            client: Arc::new(RwLock::new(client)),
+            settings: Arc::new(Self::settings(config)?),
         })
     }
 
-    pub async fn new_with_settings(settings: Vec<Params>) -> ThumbsResult<Self> {
+    pub fn new_with_settings(settings: Vec<Params>) -> ThumbsResult<Self> {
         let client = GoogleCloudStorageBuilder::from_env()
             .with_client_options(Self::client_options())
             .build()?;
 
-        Ok(Self { client, settings })
+        Ok(Self {
+            client: Arc::new(RwLock::new(client)),
+            settings: Arc::new(settings),
+        })
     }
 }
