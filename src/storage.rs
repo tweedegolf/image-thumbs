@@ -1,10 +1,10 @@
-use image::{guess_format, ImageFormat};
+use image::{ImageFormat, guess_format};
 use object_store::path::{Path, PathPart};
 use object_store::{ClientOptions, ObjectMeta, ObjectStore};
 use std::ops::Deref;
 
-use crate::model::ImageDetails;
 use crate::Error::NotSupported;
+use crate::model::ImageDetails;
 use crate::{ImageThumbs, ThumbsResult};
 
 impl<T: ObjectStore> ImageThumbs<T> {

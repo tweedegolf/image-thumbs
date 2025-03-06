@@ -53,8 +53,8 @@
 
 use ::image::ImageFormat;
 use config::Config;
-use object_store::path::Path;
 use object_store::ObjectStore;
+use object_store::path::Path;
 use thiserror::Error;
 
 pub use crate::error::Error;
@@ -237,8 +237,8 @@ mod tests {
     use tokio::fs::File;
     use tokio::io::{AsyncReadExt, BufReader};
 
-    use crate::model::ImageDetails;
     use crate::ImageThumbs;
+    use crate::model::ImageDetails;
 
     #[tokio::test]
     #[ignore]

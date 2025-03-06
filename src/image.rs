@@ -3,10 +3,10 @@ use std::io::Cursor;
 use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png;
 use image::codecs::png::{CompressionType, PngEncoder};
-use image::{imageops, DynamicImage, GenericImageView};
-use image::{load_from_memory_with_format, ImageFormat};
-use object_store::path::Path;
+use image::{DynamicImage, GenericImageView, imageops};
+use image::{ImageFormat, load_from_memory_with_format};
 use object_store::ObjectStore;
+use object_store::path::Path;
 
 use crate::model::{ImageDetails, Mode, Params};
 use crate::{Error, ImageThumbs, ThumbsResult};
@@ -167,20 +167,52 @@ mod test {
         let image = DynamicImage::new(100, 100, ColorType::L8);
 
         let cropped = crop_aspect_ratio_with_center(&image, (10, 10), (0.5, 0.5));
-        assert_eq!(cropped.width(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
-        assert_eq!(cropped.height(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(
+            cropped.width(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
+        assert_eq!(
+            cropped.height(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
 
         let cropped = crop_aspect_ratio_with_center(&image, (200, 200), (0.5, 0.5));
-        assert_eq!(cropped.width(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
-        assert_eq!(cropped.height(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(
+            cropped.width(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
+        assert_eq!(
+            cropped.height(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
 
         let cropped = crop_aspect_ratio_with_center(&image, (10, 10), (0.9, 1.));
-        assert_eq!(cropped.width(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
-        assert_eq!(cropped.height(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(
+            cropped.width(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
+        assert_eq!(
+            cropped.height(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
 
         let cropped = crop_aspect_ratio_with_center(&image, (10, 10), (0., 0.5));
-        assert_eq!(cropped.width(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
-        assert_eq!(cropped.height(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(
+            cropped.width(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
+        assert_eq!(
+            cropped.height(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
     }
 
     #[test]
@@ -188,8 +220,16 @@ mod test {
         let image = DynamicImage::new(100, 150, ColorType::L8);
 
         let cropped = crop_aspect_ratio_with_center(&image, (10, 15), (0.5, 0.5));
-        assert_eq!(cropped.width(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
-        assert_eq!(cropped.height(), 150, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(
+            cropped.width(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
+        assert_eq!(
+            cropped.height(),
+            150,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
 
         let cropped = crop_aspect_ratio_with_center(&image, (15, 10), (0.5, 0.5));
         assert_eq!(cropped.width(), 100);
@@ -209,8 +249,16 @@ mod test {
         let image = DynamicImage::new(150, 100, ColorType::L8);
 
         let cropped = crop_aspect_ratio_with_center(&image, (15, 10), (0.5, 0.5));
-        assert_eq!(cropped.width(), 150, "As the source and target aspect ratio is the same, the image should not crop be cropped");
-        assert_eq!(cropped.height(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(
+            cropped.width(),
+            150,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
+        assert_eq!(
+            cropped.height(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
 
         let cropped = crop_aspect_ratio_with_center(&image, (10, 15), (0.5, 0.5));
         assert_eq!(cropped.width(), 67);
@@ -230,8 +278,16 @@ mod test {
         let image = DynamicImage::new(150, 100, ColorType::L8);
 
         let cropped = crop_aspect_ratio_with_center(&image, (15, 10), (0.5, 0.5));
-        assert_eq!(cropped.width(), 150, "As the source and target aspect ratio is the same, the image should not crop be cropped");
-        assert_eq!(cropped.height(), 100, "As the source and target aspect ratio is the same, the image should not crop be cropped");
+        assert_eq!(
+            cropped.width(),
+            150,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
+        assert_eq!(
+            cropped.height(),
+            100,
+            "As the source and target aspect ratio is the same, the image should not crop be cropped"
+        );
 
         let cropped = crop_aspect_ratio_with_center(&image, (100, 150), (0.5, 0.5));
         assert_eq!(cropped.width(), 67);
