@@ -1,15 +1,20 @@
 use std::io::Cursor;
 
-use image::codecs::jpeg::JpegEncoder;
-use image::codecs::png;
-use image::codecs::png::{CompressionType, PngEncoder};
-use image::{DynamicImage, GenericImageView, imageops};
-use image::{ImageFormat, load_from_memory_with_format};
-use object_store::ObjectStore;
-use object_store::path::Path;
+use image::{
+    DynamicImage, GenericImageView, ImageFormat,
+    codecs::{
+        jpeg::JpegEncoder,
+        png,
+        png::{CompressionType, PngEncoder},
+    },
+    imageops, load_from_memory_with_format,
+};
+use object_store::{ObjectStore, path::Path};
 
-use crate::model::{ImageDetails, Mode, Params};
-use crate::{Error, ImageThumbs, ThumbsResult};
+use crate::{
+    Error, ImageThumbs, ThumbsResult,
+    model::{ImageDetails, Mode, Params},
+};
 
 impl<T: ObjectStore> ImageThumbs<T> {
     pub(crate) async fn create_thumb_images_from_bytes(

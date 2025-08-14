@@ -1,11 +1,11 @@
 use image::{ImageFormat, guess_format};
-use object_store::path::{Path, PathPart};
-use object_store::{ClientOptions, ObjectMeta, ObjectStore};
+use object_store::{
+    ClientOptions, ObjectMeta, ObjectStore,
+    path::{Path, PathPart},
+};
 use std::ops::Deref;
 
-use crate::Error::NotSupported;
-use crate::model::ImageDetails;
-use crate::{ImageThumbs, ThumbsResult};
+use crate::{Error::NotSupported, ImageThumbs, ThumbsResult, model::ImageDetails};
 
 impl<T: ObjectStore> ImageThumbs<T> {
     /// Returns options for an [`object_store`] client that maps the file extensions `.jpeg`,

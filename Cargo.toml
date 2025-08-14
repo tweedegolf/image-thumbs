@@ -1,11 +1,11 @@
 [package]
 name = "image_thumbs"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 repository = "https://github.com/tweedegolf/image-thumbs"
-keywords = ["GCS", "image", "thumbnails"]
+keywords = ["GCS", "AWS", "image", "thumbnails"]
 license = "MIT OR Apache-2.0"
-description = "Simple to use crate to create thumbnails and store them in a object store like Google Cloud Storage"
+description = "Simple to use crate to create thumbnails and store them in a object store like Google Cloud Storage or AWS S3"
 exclude = [
     ".github/",
     "compose.yml",
@@ -17,7 +17,7 @@ exclude = [
 name = "basic"
 
 [dependencies]
-object_store = { version = "0.11.0", features = ["gcp"] }
+object_store = { version = "0.12", features = ["gcp", "aws"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 config = { version = "0.15.8", default-features = false, features = ["yaml"] }
 thiserror = "2.0"

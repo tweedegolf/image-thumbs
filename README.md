@@ -28,10 +28,10 @@ thumbs:
 
 ## Google credentials
 This crate relies on [object_store](https://crates.io/crates/object_store) for the interaction with the storage backend.
-Currently, this crate only supports Google Cloud Storage.
+Currently, this crate only supports Google Cloud Storage and AWS S3.
 
 To configure the Google Service Account, use one of the following environment variables as 
-[described in the object_store](https://docs.rs/object_store/0.9.0/object_store/gcp/struct.GoogleCloudStorageBuilder.html#method.from_env)
+[described in the object_store](https://docs.rs/object_store/latest/object_store/gcp/struct.GoogleCloudStorageBuilder.html#method.from_env)
 crate.
 
 ```text
@@ -45,10 +45,12 @@ GOOGLE_BUCKET_NAME: (alias) bucket name
 
 Then use it in your code 
 ```rust
+use image_thumbs::GoogleCloudStorage;
+
 #[tokio::main]
 async fn main() {
     // Path to your thumbnail configuration yaml. You may specify the .yaml extension in the path, but you don't need to.
-    let thumbs = image_thumbs::ImageThumbs::new("examples/image_thumbs")
+    let thumbs = image_thumbs::ImageThumbs::<GoogleCloudStorage>::new("examples/image_thumbs")
         .await
         .unwrap();
     thumbs
@@ -60,4 +62,19 @@ async fn main() {
         .await
         .unwrap();
 }
+```
+
+For AWS S3 the following environment variables as 
+[described in the object_store](https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env)
+crate:
+
+```text
+AWS_BUCKET: required bucket name
+AWS_ACCESS_KEY_ID: access_key_id
+AWS_SECRET_ACCESS_KEY: secret_access_key
+AWS_DEFAULT_REGION: region
+AWS_ENDPOINT: endpoint
+AWS_SESSION_TOKEN: token
+AWS_ALLOW_HTTP: set to "true" to permit HTTP connections without TLS
+AWS_REQUEST_PAYER: set to "true" to permit operations on requester-pays buckets.
 ```

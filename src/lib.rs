@@ -35,11 +35,12 @@
 //!
 //! Then use it in your code
 //! ```no_run
+//! # use object_store::gcp::GoogleCloudStorage;
 //! # #[tokio::main]
 //! # async fn main() {
 //!     // Path to your thumbnail configuration yaml. You may specify the .yaml extension in the
 //!     // path, but you don't need to.
-//!     let thumbs = image_thumbs::ImageThumbs::new("examples/image_thumbs").unwrap();
+//!     let thumbs = image_thumbs::ImageThumbs::<GoogleCloudStorage>::new("examples/image_thumbs").unwrap();
 //!     thumbs
 //!         .create_thumbs("penguin.jpg", "/thumbs", false)
 //!         .await
@@ -53,16 +54,18 @@
 
 use ::image::ImageFormat;
 use config::Config;
-use object_store::ObjectStore;
-use object_store::path::Path;
+use object_store::{ObjectStore, path::Path};
 use thiserror::Error;
 
-pub use crate::error::Error;
-pub use crate::error::ThumbsResult;
-pub use crate::model::ImageThumbs;
+pub use crate::{
+    error::{Error, ThumbsResult},
+    model::ImageThumbs,
+};
 pub use model::Params;
-pub use object_store::gcp::GoogleCloudStorage;
 
+pub use object_store::{aws::AmazonS3, gcp::GoogleCloudStorage};
+
+mod aws;
 mod error;
 mod gcs;
 mod image;
@@ -232,19 +235,20 @@ impl<T: ObjectStore> ImageThumbs<T> {
 #[cfg(test)]
 mod tests {
     use image::ImageFormat;
-    use object_store::path::Path;
+    use object_store::{gcp::GoogleCloudStorage, path::Path};
     use sequential_test::sequential;
-    use tokio::fs::File;
-    use tokio::io::{AsyncReadExt, BufReader};
+    use tokio::{
+        fs::File,
+        io::{AsyncReadExt, BufReader},
+    };
 
-    use crate::ImageThumbs;
-    use crate::model::ImageDetails;
+    use crate::{ImageThumbs, model::ImageDetails};
 
     #[tokio::test]
     #[ignore]
     #[sequential]
     async fn create_thumbs() {
-        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
+        let client = ImageThumbs::<GoogleCloudStorage>::new("src/test/image_thumbs").unwrap();
         client
             .create_thumbs("penguin.jpg", "/test_dir", false)
             .await
@@ -289,7 +293,7 @@ mod tests {
     #[ignore]
     #[sequential]
     async fn create_thumbs_dir() {
-        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
+        let client = ImageThumbs::<GoogleCloudStorage>::new("src/test/image_thumbs").unwrap();
         client
             .create_thumbs_dir(None, "thumbs", false)
             .await
@@ -353,7 +357,7 @@ mod tests {
     #[ignore]
     #[sequential]
     async fn create_thumbs_from_bytes() {
-        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
+        let client = ImageThumbs::<GoogleCloudStorage>::new("src/test/image_thumbs").unwrap();
         // create JPG image thumbs
         {
             let test_jpg = File::open("src/test/mock_data/testBucket/penguin.jpg")
@@ -441,7 +445,7 @@ mod tests {
     #[ignore]
     #[sequential]
     async fn override_behaviour() {
-        let client = ImageThumbs::new("src/test/image_thumbs").unwrap();
+        let client = ImageThumbs::<GoogleCloudStorage>::new("src/test/image_thumbs").unwrap();
         let broken_thumb = ImageDetails {
             stem: "penguin_standard".to_string(),
             format: ImageFormat::Png,
