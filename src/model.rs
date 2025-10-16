@@ -1,4 +1,5 @@
 use image::ImageFormat;
+use object_store::ObjectStore;
 use object_store::path::Path;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -8,6 +9,18 @@ use tokio::sync::RwLock;
 pub struct ImageThumbs<T> {
     pub(crate) client: Arc<RwLock<T>>,
     pub(crate) settings: Arc<Vec<Params>>,
+}
+
+impl<T> ImageThumbs<T> {
+    pub fn with_store(object_store: T, settings: Vec<Params>) -> Self
+    where
+        T: ObjectStore,
+    {
+        Self {
+            client: Arc::new(RwLock::new(object_store)),
+            settings: Arc::new(settings),
+        }
+    }
 }
 
 impl<T> Clone for ImageThumbs<T> {

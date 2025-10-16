@@ -2,7 +2,7 @@
 
 Easy-to-use library to create image thumbnails from images existing on some (cloud) object storage or from disk.
 
-Currently implemented is a connection to Google Cloud Storage, but it can be easily extended to other providers.
+Works with any storage provider that is supported by [`object_store`](https://crates.io/crates/object_store).
 
 ## Supported formats
 PNG and JPEG are currently the only supported image formats.
@@ -28,7 +28,6 @@ thumbs:
 
 ## Google credentials
 This crate relies on [object_store](https://crates.io/crates/object_store) for the interaction with the storage backend.
-Currently, this crate only supports Google Cloud Storage and AWS S3.
 
 To configure the Google Service Account, use one of the following environment variables as 
 [described in the object_store](https://docs.rs/object_store/latest/object_store/gcp/struct.GoogleCloudStorageBuilder.html#method.from_env)

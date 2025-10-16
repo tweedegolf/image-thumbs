@@ -14,21 +14,21 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: cargo fmt --all -- --check
 
   # no cache needed for cargo outdated
   outdated:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - run: cargo install cargo-outdated
+      - uses: actions/checkout@v4
+      - run: cargo install --locked cargo-outdated
       - run: cargo outdated --exit-code 1
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: cargo
@@ -38,7 +38,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: cargo
@@ -48,7 +48,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: cargo
