@@ -1,6 +1,6 @@
 use image::{ImageFormat, guess_format};
 use object_store::{
-    ClientOptions, ObjectMeta, ObjectStore,
+    ClientOptions, ObjectMeta, ObjectStore, ObjectStoreExt,
     path::{Path, PathPart},
 };
 use std::ops::Deref;
